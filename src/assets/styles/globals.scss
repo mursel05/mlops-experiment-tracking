@@ -1,0 +1,35 @@
+@use "./tailwind.css";
+@use "./font.scss";
+
+:root {
+  --color-bg: #f8f9ff;
+  --color-border: #dddfeb;
+  --color-text: #03045e;
+  --color-text-secondary: #5c5c5c;
+}
+
+html {
+  font-size: 1.112vw;
+
+  @media (max-width: 640px) {
+    font-size: 4.27vw;
+  }
+}
+
+body {
+  overflow-x: hidden;
+  font-family: "InterTight", sans-serif;
+  background-color: var(--color-bg);
+}
+
+@layer utilities {
+  p,
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    white-space: pre-line;
+  }
+}
