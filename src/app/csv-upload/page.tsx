@@ -7,12 +7,10 @@ import { useRouter } from "next/navigation";
 import { Point } from "@/models/point";
 import { Metric } from "@/models/metric";
 import { Experiment } from "@/models/experiment";
-import { InputSwitch } from "primereact/inputswitch";
 
 export default function CSVUpload() {
-  const { toast, setExperiments, setPoints, setLoading } =
-    useContext(DataContext);
-  const [removeZeroPoints, setRemoveZeroPoints] = useState(true);
+  const { toast, setExperiments, setPoints } = useContext(DataContext);
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
   function processPointsToExperiments(points: Point[]) {
@@ -69,8 +67,7 @@ export default function CSVUpload() {
                 row.experiment_id &&
                 row.metric_name &&
                 !isNaN(row.step) &&
-                !isNaN(row.value) &&
-                (!removeZeroPoints || row.value !== 0)
+                !isNaN(row.value)
             ) as Point[];
             setPoints(validData);
             const experiments = processPointsToExperiments(validData);
@@ -99,22 +96,15 @@ export default function CSVUpload() {
   };
 
   return (
-    <div className="h-screen flex items-center justify-center flex-col gap-4">
+    <div className="h-screen flex items-center justify-center flex-col gap-4 relative">
+      {loading && (
+        <div className="absolute top-0 left-0 w-full h-full bg-black/50 flex items-center justify-center z-999">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-white"></div>
+        </div>
+      )}
       <h1 className="text-[2rem] text-(--color-text) font-[500]">
         Upload CSV File
       </h1>
-      <div className="flex items-center gap-2">
-        <InputSwitch
-          inputId="input-remove-zero-points"
-          checked={removeZeroPoints}
-          onChange={(e) => setRemoveZeroPoints(e.value)}
-        />
-        <label
-          htmlFor="input-remove-zero-points"
-          className="text-sm text-gray-700">
-          Remove Zero Points
-        </label>
-      </div>
       <FileUpload
         mode="basic"
         name="csv"

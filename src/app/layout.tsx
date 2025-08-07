@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
-import "@/assets/styles/globals.scss";
+import "@/assets/styles/globals.css";
 import { PrimeReactProvider } from "primereact/api";
 import { DataProvider } from "@/context/ApiContext";
 import "primereact/resources/themes/lara-light-cyan/theme.css";

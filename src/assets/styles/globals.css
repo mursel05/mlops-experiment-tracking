@@ -1,7 +1,8 @@
-@use "./tailwind.css";
-@use "./font.scss";
+@import "./font.css";
+@import "tailwindcss";
 
 :root {
+  --color-light: #ffffff;
   --color-bg: #f8f9ff;
   --color-border: #dddfeb;
   --color-text: #03045e;
@@ -20,16 +21,4 @@ body {
   overflow-x: hidden;
   font-family: "InterTight", sans-serif;
   background-color: var(--color-bg);
-}
-
-@layer utilities {
-  p,
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
-    white-space: pre-line;
-  }
 }

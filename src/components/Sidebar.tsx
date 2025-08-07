@@ -11,12 +11,11 @@ import { usePathname } from "next/navigation";
 import Image from "next/image";
 
 export default function Sidebar() {
-  const { experiments, selectedExperiments, setSelectedExperiments } =
+  const { experiments, selectedExperiments, setSelectedExperiments, closeSidebar, setCloseSidebar } =
     useContext(DataContext);
   const [expandedRows, setExpandedRows] = useState<any>(null);
   const router = useRouter();
   const pathname = usePathname();
-  const [closeSidebar, setCloseSidebar] = useState(true);
 
   const metricsTemplate = (rowData: Experiment) => {
     return `${rowData.metrics.length} metrics`;

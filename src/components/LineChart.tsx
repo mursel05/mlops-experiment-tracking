@@ -1,93 +1,31 @@
 "use client";
 import { DataContext } from "@/context/ApiContext";
 import { Experiment } from "@/models/experiment";
-import { ChartData } from "chart.js/auto";
-import { Chart } from "primereact/chart";
-import { useContext, useEffect, useState } from "react";
-import { useInView } from "react-intersection-observer";
+import { useContext, useMemo } from "react";
+import { Point } from "@/models/point";
+import dynamic from "next/dynamic";
 
 interface LineChartProps {
   index: number;
 }
 
 const LineChart = ({ index }: LineChartProps) => {
-  const { selectedExperiments, points, setLoading } = useContext(DataContext);
-  const [chartOptions, setChartOptions] = useState({});
-  const [chartData, setChartData] = useState<ChartData>();
-  const { ref, inView } = useInView({
-    threshold: 0.1,
-  });
+  const Plot = dynamic(() => import("react-plotly.js"), { ssr: false });
+  const { selectedExperiments, points, closeSidebar } = useContext(DataContext);
 
-  useEffect(() => {
-    const documentStyle = getComputedStyle(document.documentElement);
-    const textColor = documentStyle.getPropertyValue("--color-text");
-    const textColorSecondary = documentStyle.getPropertyValue(
-      "--color-text-secondary"
-    );
-    const surfaceBorder = documentStyle.getPropertyValue("--color-border");
+  const efficientSample = (data: Point[], maxPoints = 1000) => {
+    if (data.length <= maxPoints) return data;
+    const step = Math.ceil(data.length / maxPoints);
+    return data.filter((_, index) => index % step === 0);
+  };
 
-    const options = {
-      responsive: true,
-      maintainAspectRatio: false,
-      aspectRatio: 0.6,
-      animation: {
-        duration: 0,
-      },
-      interaction: {
-        intersect: false,
-        mode: "index" as const,
-      },
-      plugins: {
-        legend: {
-          labels: {
-            color: textColor,
-          },
-        },
-      },
-      tooltip: {
-        mode: "index" as const,
-        intersect: false,
-        filter: function (tooltipItem: any) {
-          return tooltipItem.dataIndex % 10 === 0;
-        },
-      },
-      scales: {
-        x: {
-          type: "linear" as const,
-          position: "bottom" as const,
-          title: {
-            display: true,
-            text: "Step",
-            color: textColor,
-          },
-          ticks: {
-            color: textColorSecondary,
-          },
-          grid: {
-            color: surfaceBorder,
-          },
-        },
-        y: {
-          title: {
-            display: true,
-            text: "Value",
-            color: textColor,
-          },
-          ticks: {
-            color: textColorSecondary,
-          },
-          grid: {
-            color: surfaceBorder,
-          },
-        },
-      },
-    };
-
-    setChartOptions(options);
-  }, []);
-
-  useEffect(() => {
-    setLoading(true);
+  const { plotData, layout } = useMemo(() => {
+    if (
+      !selectedExperiments?.length ||
+      !selectedExperiments[0]?.metrics[index]
+    ) {
+      return { plotData: [], layout: {} };
+    }
     const metricName = selectedExperiments[0].metrics[index].name;
     const colors = [
       "#FFCB33",
@@ -97,8 +35,7 @@ const LineChart = ({ index }: LineChartProps) => {
       "#9D7AFF",
       "#FF6F61",
     ];
-
-    const datasets = selectedExperiments.map(
+    const traces = selectedExperiments.map(
       (experiment: Experiment, i: number) => {
         const experimentPoints = points
           .filter(
@@ -107,42 +44,112 @@ const LineChart = ({ index }: LineChartProps) => {
               point.metric_name === metricName
           )
           .sort((a, b) => a.step - b.step);
-
+        const sampledPoints = efficientSample(experimentPoints, 1000);
         return {
-          label: experiment.experiment_id,
-          data: experimentPoints.map((point) => ({
-            x: point.step,
-            y: point.value,
-          })),
-          fill: false,
-          borderColor: colors[i % colors.length],
-          backgroundColor: colors[i % colors.length] + "20",
-          tension: 0.4,
-          pointRadius: 0,
+          x: sampledPoints.map((point) => point.step),
+          y: sampledPoints.map((point) => point.value),
+          type: "scatter" as const,
+          mode: "lines" as const,
+          name: experiment.experiment_id,
+          line: {
+            color: colors[i % colors.length],
+            width: 2,
+          },
+          hovertemplate:
+            `<b>${experiment.experiment_id}</b><br>` +
+            `Step: %{x}<br>` +
+            `Value: %{y:.6f}<br>` +
+            `<extra></extra>`,
+          connectgaps: true,
         };
       }
     );
-    setChartData({
-      datasets: datasets,
-    });
-    setTimeout(() => {
-      setLoading(false);
-    }, 2000);
-  }, [selectedExperiments, points, index]);
+
+    const documentStyle = getComputedStyle(document.documentElement);
+    const textColor = documentStyle.getPropertyValue("--color-text");
+    const bgColor = documentStyle.getPropertyValue("--color-light");
+    const gridColor = documentStyle.getPropertyValue("--color-border");
+
+    const plotLayout = {
+      title: {
+        text: metricName,
+        font: {
+          size: 18,
+          color: textColor,
+        },
+        x: 0.02,
+      },
+      xaxis: {
+        title: {
+          text: "Step",
+          font: { color: textColor, size: 14 },
+        },
+        tickfont: { color: textColor, size: 12 },
+        gridcolor: gridColor,
+        zerolinecolor: gridColor,
+        linecolor: gridColor,
+      },
+      yaxis: {
+        title: {
+          text: "Value",
+          font: { color: textColor, size: 14 },
+        },
+        tickfont: { color: textColor, size: 12 },
+        gridcolor: gridColor,
+        zerolinecolor: gridColor,
+        linecolor: gridColor,
+      },
+      plot_bgcolor: bgColor,
+      paper_bgcolor: bgColor,
+      font: {
+        family: "Inter, system-ui, sans-serif",
+        color: textColor,
+      },
+      margin: {
+        l: 60,
+        r: 40,
+        t: 60,
+        b: 60,
+      },
+      hovermode: "x unified" as const,
+      showlegend: true,
+      legend: {
+        orientation: "h" as const,
+        x: 0.5,
+        y: -0.15,
+        xanchor: "center" as const,
+        yanchor: "top" as const,
+        font: {
+          color: textColor,
+          size: 12,
+        },
+        bgcolor: "rgba(0,0,0,0)",
+        bordercolor: "rgba(0,0,0,0)",
+        itemsizing: "constant" as const,
+        itemwidth: 30,
+      },
+      autosize: true,
+      responsive: true,
+    };
+
+    return { plotData: traces, layout: plotLayout };
+  }, [selectedExperiments, points, index, closeSidebar]);
+
+  const config = {
+    displayModeBar: true,
+    displaylogo: false,
+    plotGlPixelRatio: 1,
+    responsive: true,
+  };
 
   return (
-    <div className="card">
-      <h2 className="text-lg font-semibold p-4">
-        {selectedExperiments[0].metrics[index].name}
-      </h2>
-      <div ref={ref} className="min-w-[25rem]">
-        {inView ? (
-          <Chart type="line" data={chartData} options={chartOptions} />
-        ) : (
-          <p className="text-center font-[400] text-(color-text-secondary) text-[1rem]">Loading chart...</p>
-        )}
-      </div>
-    </div>
+    <Plot
+      data={plotData}
+      layout={layout}
+      config={config}
+      useResizeHandler={true}
+      className="p-2 w-full h-[25rem]"
+    />
   );
 };
 

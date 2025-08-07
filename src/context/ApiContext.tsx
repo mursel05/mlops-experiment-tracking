@@ -12,7 +12,6 @@ import { ReactNode } from "react";
 import { Experiment } from "@/models/experiment";
 import { Toast } from "primereact/toast";
 import { Point } from "@/models/point";
-import Loading from "@/components/Loading";
 import Sidebar from "@/components/Sidebar";
 
 export const DataContext = createContext<{
@@ -23,8 +22,8 @@ export const DataContext = createContext<{
   setSelectedExperiments: Dispatch<SetStateAction<any>>;
   points: Point[];
   setPoints: Dispatch<SetStateAction<Point[]>>;
-  loading: boolean;
-  setLoading: Dispatch<SetStateAction<boolean>>;
+  closeSidebar: boolean;
+  setCloseSidebar: Dispatch<SetStateAction<boolean>>;
 }>({
   experiments: [],
   setExperiments: () => {},
@@ -33,8 +32,8 @@ export const DataContext = createContext<{
   setSelectedExperiments: () => {},
   points: [],
   setPoints: () => {},
-  loading: false,
-  setLoading: () => {},
+  closeSidebar: false,
+  setCloseSidebar: () => {},
 });
 
 export const DataProvider = ({ children }: { children: ReactNode }) => {
@@ -42,7 +41,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   const [points, setPoints] = useState<Point[]>([]);
   const [selectedExperiments, setSelectedExperiments] = useState(null);
   const toast = useRef(null);
-  const [loading, setLoading] = useState(false);
+  const [closeSidebar, setCloseSidebar] = useState(false);
 
   const contextData = {
     experiments: experiments,
@@ -52,8 +51,8 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     selectedExperiments: selectedExperiments,
     setSelectedExperiments: setSelectedExperiments,
     toast: toast,
-    loading: loading,
-    setLoading: setLoading,
+    closeSidebar: closeSidebar,
+    setCloseSidebar: setCloseSidebar,
   };
 
   return (
@@ -61,10 +60,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       <Toast ref={toast} />
       <div className="flex flex-col md:flex-row h-screen">
         <Sidebar />
-        <main className="flex-1 overflow-auto">
-          {loading && <Loading />}
-          {children}
-        </main>
+        <main className="flex-1 overflow-auto">{children}</main>
       </div>
     </DataContext.Provider>
   );
