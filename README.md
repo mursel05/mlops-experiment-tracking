@@ -19,5 +19,5 @@ A React-based frontend application for uploading, inspecting, and comparing mach
 
 - Next.js + TypeScript
 - PrimeReact UI components
-- Chart.js for visualizations
+- Plotly.js for visualizations
 - Papa Parse for CSV handling
